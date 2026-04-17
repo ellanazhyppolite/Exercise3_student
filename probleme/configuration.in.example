@@ -1,0 +1,35 @@
+output = output_4_5_b_three_body_with_atmosphere.txt
+ 
+numBodies = 2
+timeScheme = 1
+sampling = 1
+ 
+tEnd = 4e5.0
+dt = 0.5
+tolerance = 1e-6
+G = 6.6740e-11
+ 
+useAtmosphere = true
+ 
+rho0 = 1.2
+atmosphereScale = 7238.2
+dragArea = 19.7923475393
+dragCoefficient = 0.3
+dragBody = 3 // Which body feels drag
+dragCenterBody = 1 // Which one has the atmosphere
+ 
+m1 = 5.972e24
+r1 = 6.3781e6
+x1 = 0.0
+y1 = 0.0
+vx1 = 0.0
+vy1 = 0.0
+ 
+m2 = 7.348e22
+r2 = 1737400
+x2 = 384400e3
+y2 = 0.0
+vx2 = 0.0
+vy2 = 0.0
+ 
+
