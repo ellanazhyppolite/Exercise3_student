@@ -214,7 +214,7 @@ private:
                 }else{
                     dt = dt * pow(tolerance/d, 1.0/5.0);
                 }
-            }while(d > tolerance)
+            }while(d > tolerance);
 
             cout << "%%%%%%" << endl;
 
