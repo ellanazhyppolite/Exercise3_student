@@ -5,9 +5,7 @@ import glob
 import os
 import subprocess
 
-# ============================================================
-# CONFIGURATION ET SIMULATION
-# ============================================================
+
 
 repertoire = '/Users/eldidi/Desktop/Exercise3_student/probleme'
 executable = '/engine'
@@ -19,7 +17,7 @@ os.makedirs(outdir, exist_ok=True)
 input_parameters = {
     'numBodies': 2,
     'timeScheme': 1,   
-    'sampling': 1,      # Mis à 1 pour une précision maximale sur h_min
+    'sampling': 1,      
     'tEnd': 172800,
     'dt': 0.5,
     'tolerance': 1e-6,
@@ -46,9 +44,7 @@ for eps in eps_values:
     print(f"Running simulation for eps = {eps}...")
     subprocess.run(cmd, shell=True)
 
-# ============================================================
-# CHARGEMENT ET TRI (CRUCIAL)
-# ============================================================
+
 
 files = glob.glob(os.path.join(outdir, "run_eps_*.txt"))
 datasets = []
@@ -69,9 +65,6 @@ datasets = [datasets[i] for i in order]
 
 print("Epsilons triés (du plus précis au moins précis) :", eps_list)
 
-# ============================================================
-# ANALYSE PHYSIQUE (h_min, v_max, N_steps)
-# ============================================================
 
 R_T = input_parameters['r1']
 h_min_list = []
@@ -96,7 +89,7 @@ for data in datasets:
     else:
         h_min_list.append(h[idx_h])
 
-    # Interpolation quadratique pour v_max
+    
     idx_v = np.argmax(v)
     if 0 < idx_v < len(v) - 1:
         v1, v2, v3 = v[idx_v-1], v[idx_v], v[idx_v+1]
@@ -109,24 +102,19 @@ for data in datasets:
 h_min = np.array(h_min_list)
 v_max = np.array(v_max_list)
 
-# ============================================================
-# CALCUL DES ERREURS (Référence = run le plus précis)
-# ============================================================
 
-# La référence est le premier élément car on a trié par eps croissant
+
+
 h_ref = h_min[0]
 v_ref = v_max[0]
 
-# Erreur relative par rapport au run le plus précis
+
 err_h = np.abs(h_min[1:] - h_ref) / np.abs(h_ref)
 err_v = np.abs(v_max[1:] - v_ref) / np.abs(v_ref)
 eps_plot = eps_list[1:]
 
-# ============================================================
-# GRAPHIQUES
-# ============================================================
 
-# 1. Étude de Convergence
+
 plt.figure(figsize=(12, 5))
 plt.subplot(1, 2, 1)
 plt.loglog(eps_plot, err_h, 'bo-', lw=1.5, label="Erreur sur h_min")
@@ -144,8 +132,7 @@ plt.grid(True, which="both", ls="--", alpha=0.5)
 plt.tight_layout()
 plt.show()
 
-# 2. Corrélation Delta t vs Distance (Axe Double)
-# On utilise le run le plus précis [0]
+
 data_best = datasets[0]
 t_b = data_best[:, 0]
 dist_b = np.sqrt((data_best[:,5]-data_best[:,1])**2 + (data_best[:,6]-data_best[:,2])**2)
@@ -166,9 +153,7 @@ ax2.tick_params(axis='y', labelcolor='tab:red')
 plt.title("Lien entre proximité orbitale et adaptation du pas de temps")
 plt.show()
 
-# ============================================================
-# COMPARAISON ET GAIN
-# ============================================================
+
 
 N_fixed = int(input_parameters['tEnd'] / input_parameters['dt'])
 
