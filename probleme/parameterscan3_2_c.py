@@ -18,6 +18,7 @@ outdir = "adaptive_scan_q34a"
 os.makedirs(outdir, exist_ok=True)
 
 input_parameters = {
+    
     'numBodies': 2,
     'timeScheme': 1,   
     'sampling': 10,
