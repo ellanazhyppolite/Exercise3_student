@@ -10,6 +10,9 @@ d = 384748e3
 M = mT + mL
 
 
+
+
+
 x1 = -(mL / M) * d
 x2 = (mT / M) * d
 omega = np.sqrt(G * M / d**3)
