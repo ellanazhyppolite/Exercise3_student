@@ -1,7 +1,6 @@
 
 #%%
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.collections import LineCollection
@@ -12,7 +11,7 @@ import math
 import subprocess
 
 # Parameters
-repertoire = '/Users/ella/Documents/EPFL/BA4/PHYSNUM/physnum_ex3/probleme'
+repertoire = '/Users/ella/Documents/EPFL/BA4/PHYSNUM/Exercise3_student/probleme'
 #repertoire = '/Users/eldidi/Desktop/physnum/physnum_ex3/physnum_ex3/probleme'
 executable = '/engine'
 input_filename = 'configuration.in.example' # Strictly no longer needed, but we keep it for now to avoid having to change the code in engine.cpp
@@ -21,11 +20,11 @@ input_filename = 'configuration.in.example' # Strictly no longer needed, but we 
 input_parameters = {
     'numBodies': 2,
     'timeScheme': 0, # 0 pour dt fixe, 1 pour schema adaptatif
-    'sampling': 999, # mettre 0 pour ecrire tout les pas
+    'sampling': 1, # mettre 0 pour ecrire tout les pas
     #'tEnd': 172800,  # 2 jours
-    'tEnd' : 2.333e+6, # 27 jours
-    'dt': 0.5,
-    'tolerance': 1e-5,
+    'tEnd' : 2.333e+6 * 10, # 27 jours.
+    'dt': 1,
+    'tolerance': 1e-6,
     'G': 6.6740e-11,
 
     #atmosphere
@@ -37,59 +36,39 @@ input_parameters = {
     'dragBody': 1,  #indice du corps qui rentre dans l'atm
     'dragCenterBody': 0, #indice du corps qui a une atm      !! indices commencent a 0
 
-
     # Terre
     'm1': 5.972e24,
     'r1': 6378.1e3, # en mètres
-    'x1': 0.0,
+    'x1': -4.67e6,
     'y1': 0.0, # mètres
     'vx1': 0.0,
-    'vy1': 0.0,
+    'vy1': -12.4,
 
-     #Lune
-    #'m2': 7.348e22,
-    #'r2': 1737.4,
-    #'x2': 0.0,
-    #'y2': 384748e3,  # mètres
-    #'vx2': np.sqrt(6.6740e-11 * 5.972e24 / 384748e3),  # v_circulaire = sqrt(GM/r) ≈ 1018 m/s
-    #'vx2' : 1022,
-    #'vy2': 0.0,
+    #Lune
+    'm2': 7.348e22,
+    'r2': 1737.4e3,
+    'x2': 3.8e8,
+    'y2': 0.0,  # mètres
+    'vx2' : 0.0,
+    'vy2': 1010,
 
     # Artémis
-    'm2': 8500,
-    'r2': 2.26, # rayon de la sonde
-    'x2': 314159e3, # en mètres
-    'y2': 0, # mètres
-    'vx2': -1178.0, # v_circulaire = sqrt(GM/r) ≈ 1018 m/s
-    'vy2': 226.0, #en m/s
-
+    #'m2': 8500,
+    #'r2': 2.26, # rayon de la sonde
+    #'x2': 314159e3, # en mètres
+    #'y2': 0, # mètres
+    #'vx2': -1178.0, # v_circulaire = sqrt(GM/r) ≈ 1018 m/s
+    #'vy2': 226.0, #en m/s
     #on peut ajouter d'autre corps de la même manière !!!!il faut qu'il y en ai autant que numbodies!!!!
 }
 
 
 # -------------------------------------------------
-#v_0 = 1.2e3 # 1.2 km/s en m/s, norme de la vitesse initiale
-#r_p = input_parameters['r1'] + 10000 
-#v_p = np.sqrt(v_0**2 + 2*input_parameters['G']*input_parameters['m1']*(1/r_p-1/input_parameters['x2'])) 
-# Updated from last time, the code below can now be used to scan any parameter, just make sure to update the paramstr and the variable_array accordingly
-
-#v_0_perpendiculaire = r_p * v_p / input_parameters['x2']
-#input_parameters['vx2'] = -np.sqrt(v_0**2 - v_0_perpendiculaire**2) # 2 jours
-#input_parameters['vy2'] = v_0_perpendiculaire
-
-#print(input_parameters['vx2'])
-#print(input_parameters['vy2'])
 
 paramstr = 'timeScheme' # The parameter to scan, must be one of the keys in input_parameters
-#variable_array = np.concatenate(([0], 2**np.arange(0, 5)))# Example values for the parameter scan
-#variable_array = 2**np.arange(14, 20)
-variable_array = [0,1]
+
+variable_array = [1]
 print(variable_array)
-#variable_array = 172800/variable_array
-#print(variable_array)
-
-# vu que je commprends pas ce qui se passe, mettre la valeur de tEnd ici aussi please
-
 
 outstr = f"syst_gravitationnel_dt{input_parameters['timeScheme']:.2g}_atm{input_parameters['useAtmosphere']:.2g}_nBodies{input_parameters['numBodies']:.2g}_q34a"   # CHANGER LA FIN SELON QUESTION
 
@@ -253,7 +232,7 @@ cmap = plt.get_cmap("tab10")
 # ============================================================
 
 
-
+#%%
 
 n = len(datasets)
 ncols = min(3, n)
@@ -265,32 +244,59 @@ axes = np.array(axarr).reshape(-1)
 for j in range(n, len(axes)):
     fig.delaxes(axes[j])
 
+
 for i, (data, pval) in enumerate(zip(datasets, param_values)):
     ax = axes[i]
 
     t   = data[:, 0]
     x_T = data[:, 1]
     y_T = data[:, 2]
-    x_A = data[:, 5]
-    y_A = data[:, 6]
+    x_L = data[:, 5]
+    y_L = data[:, 6]
+    Em = data[:, 9]
+    p = data[:, 10]
+    d_TL = data[:, 11]
 
     ax.plot(x_T, y_T, color='steelblue', lw=1.5, label='Terre')
-    ax.plot(x_A, y_A, color='tomato',    lw=1.5, label='Artemis')
+    ax.plot(x_L, y_L, color='tomato',    lw=1.5, label='Lune')
     ax.plot(x_T[0], y_T[0], 'bo', ms=5)
-    ax.plot(x_A[0], y_A[0], 'ro', ms=5)
+    ax.plot(x_L[0], y_L[0], 'ro', ms=5)
 
     ax.ticklabel_format(style='sci', scilimits=(0,0), axis='both')
     ax.set_title(f"{param_name} = {pval:.3g}")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
+    ax.set_aspect('equal')
     ax.legend(fontsize=7)
 
     print(t[-1])
 
-fig.suptitle("Position Terre & Artemis", fontsize=14)
+fig.suptitle("Position Terre & Lune", fontsize=14)
 fig.tight_layout()
-fig.savefig(os.path.join(fig_dir, "position_terre_artemis_q34a.png"), dpi=300)
+fig.savefig(os.path.join(fig_dir, "position_terre_lune_3_4_b.png"), dpi=300)
 
 
 plt.show()
-# %%
+
+plt.figure()
+plt.plot(t, Em)
+plt.xlabel('Temps (s)')
+plt.ylabel('Energie mécanique')
+plt.grid()
+
+plt.figure()
+plt.plot(t, d_TL)
+plt.xlabel('Temps (s)')
+plt.ylabel('Distance Terre-Lune (m)')
+plt.grid()
+
+plt.figure()
+plt.plot(t, p)
+plt.xlabel('Temps (s)')
+plt.ylabel('Norme de la qtt de mouv')
+plt.grid()
+
+plt.show()
+
+print("Variation relative distance :", (np.max(d_TL) - np.min(d_TL)) / np.mean(d_TL))
+    # %%
