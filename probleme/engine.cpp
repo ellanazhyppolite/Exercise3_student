@@ -1,10 +1,11 @@
+
 #include <iostream>       // basic input output streams
 #include <fstream>        // input output file stream class
 #include <cmath>          // librerie mathematique de base
 #include <iomanip>        // input output manipulators
 #include <valarray>
-#include "/Users/ella/Documents/EPFL/BA4/PHYSNUM/physnum_ex3/common/ConfigFile.h" // Il contient les methodes pour lire inputs et ecrire outputs 
-//#include "/Users/eldidi/Desktop/physnum/physnum_ex3/physnum_ex3/common/ConfigFile.h" 
+#include "/Users/ella/Documents/EPFL/BA4/PHYSNUM/Exercise3_student/common/ConfigFile.h" // Il contient les methodes pour lire inputs et ecrire outputs 
+//#include "/Users/eldidi/Desktop/physnum/physnum_ex3/Exercise3_student/common/ConfigFile.h" 
 #include <numeric>
 
 using namespace std; // ouvrir un namespace avec la librerie c++ de base
@@ -44,6 +45,9 @@ private:
     std::valarray<double> Force;
     // autre
     double d;
+    double Em;
+    double p;
+    double d_TL;
     // Output
     std::ofstream outputFile;
     int stepsSinceLastOutput = 0;
@@ -57,7 +61,25 @@ private:
     std::size_t Fijy(std::size_t i, std::size_t j) const { return 2 * i * numBodies + 2 * j + 1; }
     
 
+    // calcul energie mecanique système -- Pour terre lune q 3.4
+    void EnergieMecanique(){
+        DistTerreLune();
+        Em =  masses[0] * 0.5 * (pow(state[ivx(0)], 2) + pow(state[ivy(0)], 2)) +  masses[1] * 0.5 * (pow(state[ivx(1)], 2) + pow(state[ivy(1)], 2)) - G * masses[0] * masses[1] /d_TL;
+    }
 
+    // calcul qtt de mouvemetn -- pour terre lune q3.4
+    void QttMouvement(){
+        double p_x = masses[0] * state[ivx(0)] + masses[1] * state[ivx(1)];
+        double p_y = masses[0] * state[ivy(0)] + masses[1] * state[ivy(1)];
+        p = sqrt(p_x*p_x + p_y*p_y);
+    }
+
+    //calcul terre lune -- pour terre lune q3.4
+    void DistTerreLune(){
+        d_TL = sqrt( pow(state[ix(0)]-state[ix(1)],2) + pow(state[iy(0)]- state[iy(1)],2));
+    }
+
+    // Puissance de trainee formule F*vx :)
 
     // verifie que la distance entre chaque corps soit au moins la somme de leur rayon --> renvoie true si collision
     bool checkCollision(){
@@ -84,7 +106,10 @@ private:
                 outputFile << state[ix(i)] << " " << state[iy(i)] << " " << state[ivx(i)] << " " << state[ivy(i)] << " ";   //verifier si ajouter acceleration
         }
 
-        outputFile << endl;
+        EnergieMecanique();
+        QttMouvement();
+        DistTerreLune();
+        outputFile << " " << Em << " " << p << " " << d_TL << endl;
 
         stepsSinceLastOutput = 0;
         }
@@ -93,36 +118,19 @@ private:
         }
         //cout << "t = " << t << endl;
         //cout << "dt = " << dt << endl;
-    }
-/*
-    // Force appliquée par j sur i
-    std::valarray<double> Force(const std::valarray<double>& state_, std::size_t i, std::size_t j){
-        std::valarray<double> Force;
-        Force.resize(2);
-        double dx = state_[ix(i)] - state_[ix(j)];
-        double dy = state_[iy(i)] - state_[iy(j)];
-        double norm_rij(sqrt( pow(dx,2) + pow(dy,2)));
-        if(i != j){
-            Force[0] = -G * masses[i] * masses [j] / pow(norm_rij,3) * dx;
-            Force[1] = -G * masses[i] * masses [j] / pow(norm_rij,3) * dy;
-         }else{
-            Force[0] = 0;
-            Force[1] = 0;
-        }
-        if((i == dragBody) and (j == dragCenterBody) and useAtmosphere){      //force de l'athmosphere de dragCenterBody sur dragBody
-            double dvx = state_[ivx(dragBody)] - state_[ivx(dragCenterBody)];
-            double dvy = state_[ivy(dragBody)] - state_[ivy(dragCenterBody)];
-            double norm_vij(sqrt( pow(dvx,2) + pow(dvy,2)));
-            double Force_atm_norm(-0.5 * rho0 * exp(-(norm_rij - radii[dragCenterBody])/ atmosphereScale) * dragArea * dragCoefficient * norm_vij) ;
-            Force[0] += Force_atm_norm * dvx;
-            Force[1] += Force_atm_norm * dvy;
-        }
-        return Force;
-    }*/
 
+        cout << "dt = " << dt << endl;
+        cout << "acc = " << derivativeBuffer[ivx(1)] << " " << derivativeBuffer[ivy(1)] << endl;
+        if(timeScheme == 1){
+            cout << "d = " << d << endl;
+            cout << "t = " << t << endl;
+            cout << "%%%%%%" << endl;
+        }else{cout << "-----" << endl;}
+    }
 
         // Force appliquée par j sur i
     std::valarray<double> Force_calcul(const std::valarray<double>& state_){
+        Force = 0.0;
         for(std::size_t i = 0 ; i < numBodies; ++i){
             for(std::size_t j = 0 ; j < numBodies ; ++j){
                 double dx = state_[ix(i)] - state_[ix(j)];
@@ -181,51 +189,45 @@ private:
     }
 
     // tout les ki ont la bonne valeur après
-    void RungeKutta(const std::valarray<double>& state_){
-        k1 = dt*dydt(state_);
-        k2 = dt*dydt(state_ + 0.5 * k1);
-        k3 = dt*dydt(state_ + 0.5 * k2);
-        k4 = dt*dydt(state_ + k3);
+    void RungeKutta(const std::valarray<double>& state_, double dt_){
+        k1 = dt_*dydt(state_);
+        k2 = dt_*dydt(state_ + 0.5 * k1);
+        k3 = dt_*dydt(state_ + 0.5 * k2);
+        k4 = dt_*dydt(state_ + k3);
     }
 
     // passe de y_t à y_t+1 avec le schéma adaptatif
     void step(){
         if(timeScheme == 1){
-            double dt_saved(0.0);
             do{
-                RungeKutta(state);
-                trial1 = state + 1.0/6.0 *  (k1 + 2*k2 + 2*k3 + k4);    //eq 2.141 notes de cours
+                RungeKutta(state, dt);
+                trial1 = state + 1.0/6.0 * (k1 + 2*k2 + 2*k3 + k4);    //eq 2.141 notes de cours
 
-                dt_saved = dt;
-                dt = dt/2.0;
-                RungeKutta(state);
+                RungeKutta(state, dt/2.0);
                 halfStep = state + 1.0/6.0 * (k1 + 2*k2 + 2*k3 + k4);
-                RungeKutta(halfStep);
+                RungeKutta(halfStep, dt/2.0);
                 trial2 = halfStep + 1.0/6.0 * (k1 + 2*k2 + 2*k3 + k4);
 
-                dt = dt_saved;
                 d = norm(trial1 - trial2);
-
-                cout << "d = " << d << endl;
-                cout << "dt = " << dt << endl;
 
                 if(d > tolerance){
                     dt = 0.9 * dt * pow(tolerance/d, 1.0/5.0); 
-                }else{
-                    dt = dt * pow(tolerance/d, 1.0/5.0);
                 }
             }while(d > tolerance);
 
-            cout << "%%%%%%" << endl;
-
-            state = trial2;
+            state = trial1;
             t += dt;
+
+            dt = dt * pow(tolerance/d, 1.0/5.0);
 
         }
         if(timeScheme == 0){
-            RungeKutta(state);
+            RungeKutta(state, dt);
             state += 1.0/6.0 * (k1 + 2*k2 + 2*k3 + k4);
             t += dt;
+
+            cout << "acc = " << derivativeBuffer[ivx(1)] << " " << derivativeBuffer[ivy(1)] << endl;
+            cout << "----" << endl;
         }
     }
 
@@ -338,4 +340,5 @@ int main(int argc, char* argv[])
     }
     return EXIT_SUCCESS;
 };
+
 
